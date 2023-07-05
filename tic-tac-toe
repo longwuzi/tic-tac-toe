@@ -1,0 +1,139 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+	"strconv"
+)
+
+type Board struct {
+	tokens []int // tokens[0] -> (0,0), tokens[1] -> (0,1), ...
+}
+
+func NewBoard() *Board {
+	return &Board{
+		tokens: make([]int, 9),
+	}
+}
+
+func (b *Board) put(x, y int, u string) {
+	if u == "o" {
+		b.tokens[x+3*y] = 1
+	} else if u == "x" {
+		b.tokens[x+3*y] = 2
+	}
+}
+
+func (b *Board) get(x, y int) string {
+	if b.tokens[x+3*y] == 1 {
+		return "o"
+	} else if b.tokens[x+3*y] == 2 {
+		return "x"
+	}
+	return ""
+}
+
+func drawBoard(b *Board) {
+	fmt.Println("Current Board:")
+	fmt.Println("-----------")
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			token := b.get(i, j)
+			if token == "" {
+				fmt.Print(".")
+			} else {
+				fmt.Print(token)
+			}
+		}
+		fmt.Println()
+	}
+}
+
+func main() {
+	board := NewBoard()
+
+	fmt.Println("Player 1: o")
+	fmt.Println("Player 2: x")
+
+	currentPlayer := "o"
+	for {
+		drawBoard(board)
+
+		var move string
+		fmt.Printf("Player %s': ", currentPlayer)
+		fmt.Scanln(&move)
+
+		move = strings.TrimSpace(move)
+		moveTokens := strings.Split(move, ",")
+		if len(moveTokens) != 2 {
+			fmt.Println("Invalid input. Try again.")
+			continue
+		}
+
+		x, errX := strconv.Atoi(moveTokens[0])
+		y, errY := strconv.Atoi(moveTokens[1])
+		if errX != nil || errY != nil || x < 0 || x > 2 || y < 0 || y > 2 {
+			fmt.Println("Invalid input. Try again.")
+			continue
+		}
+
+		if board.get(x, y) != "" {
+			fmt.Println("The square is already occupied. Try again.")
+			continue
+		}
+
+		board.put(x, y, currentPlayer)
+
+		// Check for a win or draw
+		if checkWin(board, currentPlayer) {
+			drawBoard(board)
+			fmt.Printf("Player %s wins!\n", currentPlayer)
+			break
+		} else if isBoardFull(board) {
+			drawBoard(board)
+			fmt.Println("It's a draw!")
+			break
+		}
+
+		// Switch players
+		if currentPlayer == "o" {
+			currentPlayer = "x"
+		} else {
+			currentPlayer = "o"
+		}
+	}
+}
+
+func checkWin(b *Board, player string) bool {
+	for i := 0; i < 3; i++ {
+		// Check rows
+		if b.get(i, 0) == player && b.get(i, 1) == player && b.get(i, 2) == player {
+			return true
+		}
+		// Check columns
+		if b.get(0, i) == player && b.get(1, i) == player && b.get(2, i) == player {
+			return true
+		}
+	}
+
+	// Check diagonals
+	if b.get(0, 0) == player && b.get(1, 1) == player && b.get(2, 2) == player {
+		return true
+	}
+	if b.get(2, 0) == player && b.get(1, 1) == player && b.get(0, 2) == player {
+		return true
+	}
+
+	return false
+}
+
+func isBoardFull(b *Board) bool {
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			if b.get(i, j) == "" {
+				return false
+			}
+		}
+	}
+	return true
+}
